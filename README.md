@@ -12,8 +12,8 @@ This is a quotation from the Node.js official website:
 > that runs on libuv's threadpool. This can have surprising negative performance
 > implications for some applications.
 
-It is very unfortunate that I have been suffering this problem for quite a long
-time before I realized it. Then I found some solutions on NPM:
+It is very unfortunate that I have been suffering from this problem for quite a
+long time before I realized it. Then I found some solutions on NPM:
 
 - [cacheable-lookup](https://www.npmjs.com/package/cacheable-lookup)
 - [dns-lookup-cache](https://www.npmjs.com/package/dns-lookup-cache)
