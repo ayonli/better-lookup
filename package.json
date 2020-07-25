@@ -5,6 +5,7 @@
   "main": "dist/index.js",
   "types": "src/index.ts",
   "scripts": {
+    "prepublishOnly": "tsc",
     "test": "mocha --exit"
   },
   "repository": {
