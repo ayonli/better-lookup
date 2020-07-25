@@ -39,7 +39,7 @@ file support (both on Unix-like and WinNT platforms).
 
 ## Example
 
-### Using builtin `http.request`/`http.get`/`http.post`
+### Using `lookup`
 
 ```ts
 import * as https from "https";
@@ -60,33 +60,21 @@ var req = https.get("https://github.com/hyurl/better-lookup", {
 });
 ```
 
-### Using Axios
+### Using `install`
 
-For now, Axios only supports custom `httpAgent` and `httpsAgent` options which 
-can be used to attach custom lookup functionality. A
-[new PR that supports `lookup` option](https://github.com/axios/axios/pull/3138)
-is in progress, hope it'd be adopted.
+Other than using the `lookup` option for requests (some packages, like Axios,
+may not support it), we can attach the lookup functionality to the HTTP(S)
+agent via `install()`.
 
 ```ts
-import Axios from "axios";
-import { Agent as HttpsAgent } from "https";
+import * as https from "https";
 import { install } from "better-lookup";
 
-const httpsAgent = new HttpsAgent({
-    keepAlive: true,
-    maxSockets: 10,
-    rejectUnauthorized: false,
-    minVersion: "TLSv1"
+install(https.globalAgent);
+
+var req = https.get("https://github.com/hyurl/better-lookup", res => {
+    // ...
 });
-
-// Attach custom lookup functionality to the agent.
-install(httpsAgent);
-
-(async () => {
-    var res = await Axios.get("https://github.com/hyurl/better-lookup", {
-        httpsAgent
-    });
-})();
 ```
 
 ## API
