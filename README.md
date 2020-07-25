@@ -15,8 +15,8 @@ This is a quotation from the Node.js official website:
 It is very unfortunate that I have been suffering this problem for quite a long
 time before I realized it. Then I found some solutions on NPM:
 
-- [cacheable-lookup](https://npmjs.com/packages/cacheable-lookup)
-- [dns-lookup-cache](https://npmjs.com/packages/dns-lookup-cache)
+- [cacheable-lookup](https://www.npmjs.com/package/cacheable-lookup)
+- [dns-lookup-cache](https://www.npmjs.com/package/dns-lookup-cache)
 
 But after trying them out, I found there are still some problems in them, for 
 example, they don't implements atomic operation, which means the cache 
