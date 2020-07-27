@@ -1,6 +1,6 @@
 import * as dns from "dns";
 import * as fs from "fs-extra";
-import { isIP } from "net";
+import { isIP, Socket } from "net";
 import { Agent as HttpAgent } from "http";
 import { Agent as HttpsAgent } from "https";
 import { promisify } from "util";
@@ -238,28 +238,42 @@ export function lookup(
  * `0`. 
  */
 export function install<T extends HttpAgent | HttpsAgent>(
-    agent: T,
+    agent: T & {
+        createConnection?: (options: any, callback: Function) => Socket
+    },
     family: 0 | 4 | 6 = 0
 ): T {
-    if (_createConnection in agent)
-        return agent;
-    else if (typeof agent["createConnection"] !== "function")
-        throw new TypeError("Cannot install lookup function on the given agent");
-
-    agent[_createConnection] = agent["createConnection"];
-    agent["createConnection"] = function (options: any, callback: Function) {
+    let tryAttach = (options: Record<string, any>) => {
         if (!("lookup" in options)) {
             options["lookup"] = function (
                 hostname: string,
                 options: any,
-                callback: LookupCallback<string>
+                cb: LookupCallback<string>
             ) {
-                return lookup(hostname, options["family"] ?? family, callback);
+                return lookup(hostname, options["family"] ?? family, cb);
+            };
+        }
+    };
+
+    if (typeof agent.createConnection === "function") {
+        if (!(_createConnection in agent)) {
+            agent[_createConnection] = agent.createConnection;
+            agent.createConnection = function (options, callback) {
+                tryAttach(options);
+                return agent[_createConnection](options, callback);
             };
         }
 
-        return agent[_createConnection](options, callback);
-    };
+        return agent;
+    } else if (isHttpsProxyAgent(agent)) {
+        tryAttach(agent.proxy);
+        return agent;
+    } else {
+        throw new TypeError("Cannot install lookup function on the given agent");
+    }
+}
 
-    return agent;
+function isHttpsProxyAgent(agent: any): agent is { proxy: Record<string, any> } {
+    return agent.constructor.name === "HttpsProxyAgent"
+        && typeof agent.proxy === "object";
 }
