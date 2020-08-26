@@ -1,6 +1,6 @@
 {
   "name": "better-lookup",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A better async DNS lookup function for Node.js that implements atomic cache operation.",
   "main": "dist/index.js",
   "types": "src/index.ts",

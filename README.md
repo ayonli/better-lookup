@@ -99,7 +99,8 @@ type LookupCallback<T extends string | AddressInfo[]> = (
  * `A (IPv4)` and `AAAA (IPv6)` records are searched, however only one address
  * will be returned if `options.all` is not set.
  * 
- * NOTE: The internal TTL for an identical query is 10 seconds.
+ * NOTE: TTL is support by this function, but it will enforce refreshing after
+ * 10 seconds.
  */
 export function lookup(hostname: string, family?: 0 | 4 | 6): Promise<string>;
 export function lookup(hostname: string, callback: LookupCallback<string>): void;
