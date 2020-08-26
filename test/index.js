@@ -3,6 +3,8 @@ const { lookup, install } = require("..");
 const { promisify } = require("util");
 const dns = require("dns");
 const http = require("http");
+const https = require("https");
+const HttpsProxyAgent = require("https-proxy-agent");
 const assert = require("assert");
 
 const dnsLookup = promisify(dns.lookup);
@@ -36,10 +38,14 @@ describe("lookup()", () => {
 
         let addr2 = await lookup("localhost", 6);
         let _addr2 = (await dnsLookup("localhost", { family: 6 })).address;
+
+        (_addr2 === "::ffff:127.0.0.1") && (_addr2 = "::1");
         assert.strictEqual(addr2, _addr2);
 
         let addr3 = await lookup("::1", 6);
         let _addr3 = (await dnsLookup("::1", { family: 6 })).address;
+
+        (_addr2 === "::ffff:127.0.0.1") && (_addr2 = "::1");
         assert.strictEqual(addr3, _addr3);
     });
 
@@ -130,6 +136,19 @@ describe("install()", () => {
 
         var addr = await lookup(hostname);
         var req = http.get(`http://${hostname}:9000`);
+        var msg = await new Promise((resolve) => {
+            req.once("error", err => {
+                resolve(String(err));
+            });
+        });
+
+        assert.strictEqual(msg, `Error: connect ECONNREFUSED ${addr}:9000`);
+    });
+
+    it("should work with 'https-proxy-agent'", async () => {
+        var agent = install(HttpsProxyAgent({ hostname, port: 9000 }));
+        var addr = await lookup(hostname);
+        var req = https.get(`https://${hostname}:9001`, { agent });
         var msg = await new Promise((resolve) => {
             req.once("error", err => {
                 resolve(String(err));
