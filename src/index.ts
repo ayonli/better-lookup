@@ -1,5 +1,5 @@
 import * as dns from "dns";
-import * as fs from "fs/promises";
+import * as fs from "fs";
 import { isIP, Socket } from "net";
 import { Agent as HttpAgent } from "http";
 import { Agent as HttpsAgent } from "https";
@@ -16,6 +16,7 @@ type LookupCallback<T extends string | AddressInfo[]> = (
     family?: 4 | 6
 ) => void;
 
+const readFile = promisify(fs.readFile);
 const resolve4 = promisify(dns.resolve4);
 const resolve6 = promisify(dns.resolve6);
 const hostsThrottle = useThrottle("dnsLookup:loadHostsConfig", 10_000);
@@ -38,7 +39,7 @@ async function loadHostsConfig(file: string = "") {
         }
     }
 
-    return (await fs.readFile(file, "utf8")).split(/\r\n|\n/)
+    return (await readFile(file, "utf8")).split(/\r\n|\n/)
         .map(line => line.trim())
         .filter(line => !line.startsWith("#"))
         .map(line => line.split(/\s+/))
@@ -328,12 +329,12 @@ export function lookup(
  */
 export function install<T extends HttpAgent | HttpsAgent>(
     agent: T & {
-        createConnection?: (options: any, callback: Function) => Socket
+        createConnection?: (options: any, callback: Function) => Socket;
     },
     family: 0 | 4 | 6 = 0
 ): T {
     let tryAttach = (options: Record<string, any>) => {
-        if (!("lookup" in options)) {
+        if (!options["lookup"]) {
             options["lookup"] = function (
                 hostname: string,
                 options: any,
@@ -362,7 +363,7 @@ export function install<T extends HttpAgent | HttpsAgent>(
     }
 }
 
-function isHttpsProxyAgent(agent: any): agent is { proxy: Record<string, any> } {
+function isHttpsProxyAgent(agent: any): agent is { proxy: Record<string, any>; } {
     return agent.constructor.name === "HttpsProxyAgent"
         && typeof agent.proxy === "object";
 }
