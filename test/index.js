@@ -133,7 +133,7 @@ describe("lookup()", () => {
 
         let addr6 = await lookup(hostname, { family: 6, all: true });
         let _addr6 = [{
-            address: await dnsLookup6(hostname, { family: 6, all: true }),
+            address: await dnsLookup6(hostname, hostnameIPv4),
             family: 6
         }];
         assert.deepStrictEqual(addr6, _addr6);
@@ -154,7 +154,7 @@ describe("lookup()", () => {
             });
         });
         let _addr6 = [{
-            address: await dnsLookup6(hostname, { family: 6, all: true }),
+            address: await dnsLookup6(hostname, hostnameIPv4),
             family: 6
         }];
         assert.deepStrictEqual(addr6, _addr6);
