@@ -1,5 +1,5 @@
 import * as dns from "dns";
-import * as fs from "fs-extra";
+import * as fs from "fs/promises";
 import { isIP, Socket } from "net";
 import { Agent as HttpAgent } from "http";
 import { Agent as HttpsAgent } from "https";
