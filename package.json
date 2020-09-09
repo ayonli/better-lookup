@@ -6,6 +6,7 @@
   "types": "src/index.ts",
   "scripts": {
     "prepublishOnly": "tsc",
+    "pretest": "tsc",
     "test": "mocha --exit"
   },
   "repository": {
