@@ -9,6 +9,25 @@ const assert = require("assert");
 
 const dnsLookup = promisify(dns.lookup);
 const hostname = "hyurl.com";
+let hostnameIPv4 = "";
+
+async function dnsLookup6(hostname, ipv4) {
+    let ipv6;
+
+    try {
+        ipv6 = (await dnsLookup(hostname, { family: 6 })).address;
+    } catch (err) {
+        if (/getaddrinfo/.test(String(err))) {
+            // The getaddrinfo function on some system may not resolve IPv6
+            // address from the IPv4 address, we need to hack for that.
+            ipv6 = `::ffff:${ipv4}`;
+        } else {
+            throw err;
+        }
+    }
+
+    return ipv6;
+}
 
 describe("lookup()", () => {
     it("should lookup the hostname and return a promise of a string", async () => {
@@ -27,13 +46,14 @@ describe("lookup()", () => {
 
     it("should lookup the hostname for IPv4 and return a promise of a string", async () => {
         let addr = await lookup(hostname, 4);
-        let _addr = (await dnsLookup(hostname, { family: 4 })).address;
+        let _addr = hostnameIPv4 = (await dnsLookup(hostname, { family: 4 })).address;
         assert.strictEqual(addr, _addr);
     });
 
     it("should lookup a hostname for IPv6 and return a promise of a string", async () => {
         let addr = await lookup(hostname, 6);
-        let _addr = (await dnsLookup(hostname, { family: 6 })).address;
+        let _addr = await dnsLookup6(hostname, hostnameIPv4);
+
         assert.strictEqual(addr, _addr);
 
         let addr2 = await lookup("localhost", 6);
@@ -75,7 +95,11 @@ describe("lookup()", () => {
                 err ? reject(err) : resolve({ address, family });
             });
         });
-        let _addr = await dnsLookup(hostname, { family: 6 });
+        let _addr = {
+            address: await dnsLookup6(hostname, hostnameIPv4),
+            family: 6
+        };
+
         assert.deepStrictEqual(addr, _addr);
     });
 
@@ -89,7 +113,8 @@ describe("lookup()", () => {
         assert.strictEqual(addr4, _addr4);
 
         let addr6 = await lookup(hostname, { family: 6 });
-        let _addr6 = (await dnsLookup(hostname, { family: 6 })).address;
+        let _addr6 = await dnsLookup6(hostname, addr4);
+
         assert.strictEqual(addr6, _addr6);
     });
 
@@ -107,7 +132,10 @@ describe("lookup()", () => {
         assert.deepStrictEqual(addr4, _addr4);
 
         let addr6 = await lookup(hostname, { family: 6, all: true });
-        let _addr6 = await dnsLookup(hostname, { family: 6, all: true });
+        let _addr6 = [{
+            address: await dnsLookup6(hostname, { family: 6, all: true }),
+            family: 6
+        }];
         assert.deepStrictEqual(addr6, _addr6);
     });
 
@@ -125,7 +153,10 @@ describe("lookup()", () => {
                 err ? reject(err) : resolve(address);
             });
         });
-        let _addr6 = await dnsLookup(hostname, { family: 6, all: true });
+        let _addr6 = [{
+            address: await dnsLookup6(hostname, { family: 6, all: true }),
+            family: 6
+        }];
         assert.deepStrictEqual(addr6, _addr6);
     });
 });
