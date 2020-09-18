@@ -28,7 +28,7 @@ var timer = setInterval(async () => { // reload hosts file for every 10 seconds.
     HostsConfig = await hostsThrottle(loadHostsConfig);
 }, 10_000);
 
-process.once("beforeExit", () => clearInterval(timer));
+timer.unref(); // allow the process to exit once there are no more pending jobs.
 
 async function loadHostsConfig(file: string = "") {
     if (!file) {
