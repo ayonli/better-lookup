@@ -36,7 +36,7 @@ describe("lookup()", () => {
         assert.strictEqual(addr, _addr);
 
         let addr2 = await lookup("localhost");
-        let _addr2 = (await dnsLookup("localhost")).address;
+        let _addr2 = (await dnsLookup("localhost", { family: 4 })).address;
         assert.strictEqual(addr2, _addr2);
 
         let addr3 = await lookup("127.0.0.1");

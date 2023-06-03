@@ -45,14 +45,14 @@ file support (both on Unix-like and WinNT platforms).
 import * as https from "https";
 import { lookup } from "better-lookup";
 
-var req = https.get("https://github.com/hyurl/better-lookup", {
+var req = https.get("https://github.com/ayonli/better-lookup", {
     lookup
 }, res => {
     // ...
 });
 
 // Or only resolve to Ipv4 records, works better for most of the websites.
-var req = https.get("https://github.com/hyurl/better-lookup", {
+var req = https.get("https://github.com/ayonli/better-lookup", {
     family: 4,
     lookup
 }, res => {
@@ -72,7 +72,7 @@ import { install } from "better-lookup";
 
 install(https.globalAgent);
 
-var req = https.get("https://github.com/hyurl/better-lookup", res => {
+var req = https.get("https://github.com/ayonli/better-lookup", res => {
     // ...
 });
 ```

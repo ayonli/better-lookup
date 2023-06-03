@@ -16,6 +16,7 @@ type LookupCallback<T extends string | AddressInfo[]> = (
     family?: 4 | 6
 ) => void;
 
+const isNode20OrAfter = parseInt(process.version.slice(1)) >= 20;
 const readFile = promisify(fs.readFile);
 const resolve4 = promisify(dns.resolve4);
 const resolve6 = promisify(dns.resolve6);
@@ -161,7 +162,9 @@ export function lookup(
             let err4: NodeJS.ErrnoException;
             let err6: NodeJS.ErrnoException;
 
-            if (isEmpty(result)) {
+            if (isEmpty(result) ||
+                (family && !result.some(item => item.family === family))
+            ) {
                 if (!family || family === 4) {
                     try {
                         let records = await resolve4(hostname, { ttl: true });
@@ -212,7 +215,7 @@ export function lookup(
                             Cache[hostname] = addresses;
                         }
                     } catch (e) {
-                        if (e.code === "ENODATA" &&
+                        if ((e.code === "ENODATA" || e.code === "EREFUSED") &&
                             e.syscall === "queryAaaa" &&
                             family === 6
                         ) {
@@ -338,9 +341,16 @@ export function install<T extends HttpAgent | HttpsAgent>(
             options["lookup"] = function (
                 hostname: string,
                 options: any,
-                cb: LookupCallback<string>
+                cb: LookupCallback<string | AddressInfo[]>
             ) {
-                return lookup(hostname, options["family"] ?? family, cb);
+                if (isNode20OrAfter) {
+                    return lookup(hostname, {
+                        family: (options["family"] as 0 | 4 | 6) ?? family,
+                        all: true,
+                    }, cb);
+                } else {
+                    return lookup(hostname, options["family"] ?? family, cb);
+                }
             };
         }
     };
