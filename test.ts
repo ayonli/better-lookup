@@ -1,18 +1,17 @@
-/* global describe, it */
-const { lookup, install } = require("..");
-const { promisify } = require("util");
-const dns = require("dns");
-const http = require("http");
-const https = require("https");
-const HttpsProxyAgent = require("https-proxy-agent");
-const assert = require("assert");
+import { lookup, install } from ".";
+import { promisify } from "util";
+import * as dns from "dns";
+import * as http from "http";
+import * as https from "https";
+import HttpsProxyAgent from "https-proxy-agent";
+import * as assert from "assert";
 
 const dnsLookup = promisify(dns.lookup);
 const hostname = "hyurl.com";
 let hostnameIPv4 = "";
 
 async function dnsLookup6(hostname, ipv4) {
-    let ipv6;
+    let ipv6: string;
 
     try {
         ipv6 = (await dnsLookup(hostname, { family: 6 })).address;
