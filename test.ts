@@ -6,7 +6,7 @@ import * as HttpsProxyAgent from "https-proxy-agent";
 import * as assert from "assert";
 
 const dnsLookup = promisify(dns.lookup);
-const hostname = "github.com";
+const hostname = "ayon.li";
 let hostnameIPv4 = "";
 
 async function dnsLookup6(hostname, ipv4) {
