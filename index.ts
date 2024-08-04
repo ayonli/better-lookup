@@ -1,12 +1,13 @@
-import * as dns from "dns";
-import * as fs from "fs";
-import { isIP, Socket } from "net";
-import { Agent as HttpAgent } from "http";
-import { Agent as HttpsAgent } from "https";
-import { promisify } from "util";
-import useThrottle from "@hyurl/utils/useThrottle";
-import isEmpty from "@hyurl/utils/isEmpty";
-import timestamp from "@hyurl/utils/timestamp";
+import * as process from "node:process";
+import * as dns from "node:dns";
+import { isIP, Socket } from "node:net";
+import { Agent as HttpAgent } from "node:http";
+import { Agent as HttpsAgent } from "node:https";
+import { promisify } from "node:util";
+import { readFileAsText } from "@ayonli/jsext/fs";
+import { platform, unrefTimer } from "@ayonli/jsext/runtime";
+import { lines } from "@ayonli/jsext/string";
+import throttle from "@ayonli/jsext/throttle";
 
 type AddressInfo = { address: string, family: 4 | 6; };
 type AddressInfoDetail = AddressInfo & { expireAt: number; };
@@ -17,30 +18,29 @@ type LookupCallback<T extends string | AddressInfo[]> = (
 ) => void;
 
 const isNode20OrAfter = parseInt(process.version.slice(1)) >= 20;
-const readFile = promisify(fs.readFile);
 const resolve4 = promisify(dns.resolve4);
 const resolve6 = promisify(dns.resolve6);
-const hostsThrottle = useThrottle("dnsLookup:loadHostsConfig", 10_000);
 const _createConnection = Symbol("_createConnection");
 const Cache: Record<string, AddressInfoDetail[]> = {};
 
-var HostsConfig: Record<string, AddressInfoDetail[]>;
-var timer = setInterval(async () => { // reload hosts file for every 10 seconds.
-    HostsConfig = await hostsThrottle(loadHostsConfig);
+var HostsConfig: Record<string, AddressInfoDetail[]> | undefined;
+
+const timer = setInterval(async () => { // reload hosts file for every 10 seconds.
+    HostsConfig = await readHosts();
 }, 10_000);
+unrefTimer(timer); // allow the process to exit once there are no more pending jobs.
 
-timer.unref(); // allow the process to exit once there are no more pending jobs.
+function timestamp() {
+    return Math.floor(Date.now() / 1000);
+}
 
-async function loadHostsConfig(file: string = "") {
-    if (!file) {
-        if (process.platform === "win32") {
-            file = "c:\\Windows\\System32\\Drivers\\etc\\hosts";
-        } else {
-            file = "/etc/hosts";
-        }
-    }
+const readHosts = throttle(async () => {
+    const file = platform() === "windows"
+        ? "c:\\Windows\\System32\\Drivers\\etc\\hosts"
+        : "/etc/hosts";
+    const contents = await readFileAsText(file);
 
-    return (await readFile(file, "utf8")).split(/\r\n|\n/)
+    return lines(contents)
         .map(line => line.trim())
         .filter(line => !line.startsWith("#"))
         .map(line => line.split(/\s+/))
@@ -61,7 +61,7 @@ async function loadHostsConfig(file: string = "") {
 
             return configs;
         }, {});
-}
+}, 5_000);
 
 /**
  * Queries IP addresses of the given hostname, this operation is async and
@@ -131,11 +131,11 @@ export function lookup(
         }
     }
 
-    let query: Promise<AddressInfo[]>;
+    let query: Promise<AddressInfo[]> | undefined;
 
     // If local cache contains records of the target hostname, try to retrieve
     // them and prevent network query.
-    if (!isEmpty(Cache[hostname])) {
+    if (!!Cache[hostname]?.length) {
         let now = timestamp();
         let addresses = Cache[hostname].filter(a => a.expireAt > now);
 
@@ -143,7 +143,7 @@ export function lookup(
             addresses = addresses.filter(a => a.family === family);
         }
 
-        if (!isEmpty(addresses)) {
+        if (!!addresses?.length) {
             query = Promise.resolve(addresses);
         }
     }
@@ -151,18 +151,14 @@ export function lookup(
     // If local cache doesn't contain available records, then goto network
     // query.
     if (!query) {
-        let tag = `dnsLookup:${hostname}:${family}:${all}`;
-
-        query = useThrottle(tag, 10_000)(async () => {
-            if (!HostsConfig) {
-                HostsConfig = await hostsThrottle(loadHostsConfig);
-            }
+        query = throttle(async () => {
+            HostsConfig ??= await readHosts();
 
             let result: AddressInfoDetail[] = HostsConfig[hostname] || [];
-            let err4: NodeJS.ErrnoException;
-            let err6: NodeJS.ErrnoException;
+            let err4: NodeJS.ErrnoException | undefined;
+            let err6: NodeJS.ErrnoException | undefined;
 
-            if (isEmpty(result) ||
+            if (!result?.length ||
                 (family && !result.some(item => item.family === family))
             ) {
                 if (!family || family === 4) {
@@ -273,7 +269,10 @@ export function lookup(
             } else {
                 return result;
             }
-        });
+        }, {
+            duration: 10_000,
+            for: `dnsLookup:${hostname}:${family}:${all}`,
+        })();
     }
 
     if (query) {
@@ -293,7 +292,7 @@ export function lookup(
                 }
             } else {
                 if (family) {
-                    return addresses.find(a => a.family === family).address;
+                    return addresses.find(a => a.family === family)!.address;
                 } else {
                     return addresses[0].address;
                 }
@@ -311,7 +310,7 @@ export function lookup(
                 if (family) {
                     callback(
                         null,
-                        addresses.find(a => a.family === family).address,
+                        addresses.find(a => a.family === family)!.address,
                         family
                     );
                 } else {

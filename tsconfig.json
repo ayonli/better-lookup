@@ -1,0 +1,34 @@
+{
+    "compilerOptions": {
+        "module": "CommonJS",
+        "target": "es2018",
+        "newLine": "LF",
+        "moduleResolution": "NodeNext",
+        "skipLibCheck": true,
+        "noUnusedParameters": true,
+        "noUnusedLocals": true,
+        "noImplicitThis": true,
+        "importHelpers": true,
+        "removeComments": true,
+        "sourceMap": true,
+        "paths": {
+            "better-lookup": [
+                "."
+            ]
+        }
+    },
+    "include": [
+        "index.ts",
+    ],
+    "ts-node": {
+        "compilerOptions": {
+            "target": "es2020",
+            "noEmit": true,
+            "noUnusedParameters": false,
+            "experimentalDecorators": true
+        },
+        "include": [
+            "test.ts"
+        ],
+    }
+}

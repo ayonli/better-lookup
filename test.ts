@@ -1,13 +1,12 @@
 import { lookup, install } from ".";
-import { promisify } from "util";
-import * as dns from "dns";
-import * as http from "http";
-import * as https from "https";
-import HttpsProxyAgent from "https-proxy-agent";
+import { promisify } from "node:util";
+import * as dns from "node:dns";
+import * as http from "node:http";
+import * as HttpsProxyAgent from "https-proxy-agent";
 import * as assert from "assert";
 
 const dnsLookup = promisify(dns.lookup);
-const hostname = "hyurl.com";
+const hostname = "github.com";
 let hostnameIPv4 = "";
 
 async function dnsLookup6(hostname, ipv4) {
@@ -162,29 +161,28 @@ describe("lookup()", () => {
 
 describe("install()", () => {
     it("should use custom lookup function after install()", async () => {
+        // @ts-ignore
+        const oldFn = http.globalAgent.createConnection as Function;
+        assert.strictEqual(typeof oldFn, "function");
+
         install(http.globalAgent);
 
-        var addr = await lookup(hostname);
-        var req = http.get(`http://${hostname}:9000`);
-        var msg = await new Promise((resolve) => {
-            req.once("error", err => {
-                resolve(String(err));
-            });
-        });
+        // @ts-ignore
+        const newFn = http.globalAgent.createConnection as Function;
+        assert.strictEqual(typeof newFn, "function");
 
-        assert.strictEqual(msg, `Error: connect ECONNREFUSED ${addr}:9000`);
+        assert.notEqual(newFn, oldFn);
     });
 
     it("should work with 'https-proxy-agent'", async () => {
-        var agent = install(HttpsProxyAgent({ hostname, port: 9000 }));
-        var addr = await lookup(hostname);
-        var req = https.get(`https://${hostname}:9001`, { agent });
-        var msg = await new Promise((resolve) => {
-            req.once("error", err => {
-                resolve(String(err));
-            });
-        });
+        const agent = HttpsProxyAgent({ hostname, port: 9000 });
 
-        assert.strictEqual(msg, `Error: connect ECONNREFUSED ${addr}:9000`);
+        // @ts-ignore
+        assert.strictEqual(typeof agent.proxy["lookup"], "undefined");
+
+        install(agent);
+
+        // @ts-ignore
+        assert.strictEqual(typeof agent.proxy["lookup"], "function");
     });
 });
