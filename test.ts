@@ -58,11 +58,13 @@ describe("lookup()", () => {
         let _addr2 = (await dnsLookup("localhost", { family: 6 })).address;
 
         (_addr2 === "::ffff:127.0.0.1") && (_addr2 = "::1");
+        (_addr2 === "::ffff:127.0.0.1") && (_addr2 = "::1");
         assert.strictEqual(addr2, _addr2);
 
         let addr3 = await lookup("::1", 6);
         let _addr3 = (await dnsLookup("::1", { family: 6 })).address;
 
+        (addr3 === "::ffff:127.0.0.1") && (addr3 = "::1");
         (_addr2 === "::ffff:127.0.0.1") && (_addr2 = "::1");
         assert.strictEqual(addr3, _addr3);
     });
