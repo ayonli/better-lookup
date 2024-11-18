@@ -1,9 +1,9 @@
-import { lookup, install } from ".";
-import { promisify } from "node:util";
+import * as assert from "node:assert";
 import * as dns from "node:dns";
 import * as http from "node:http";
-import * as HttpsProxyAgent from "https-proxy-agent";
-import * as assert from "assert";
+import { promisify } from "node:util";
+import { HttpsProxyAgent } from "https-proxy-agent";
+import { lookup, install } from "./index";
 
 const dnsLookup = promisify(dns.lookup);
 const hostname = "ayon.li";
@@ -177,7 +177,7 @@ describe("install()", () => {
     });
 
     it("should work with 'https-proxy-agent'", async () => {
-        const agent = HttpsProxyAgent({ hostname, port: 9000 });
+        const agent = new HttpsProxyAgent(`http://${hostname}:9000`);
 
         // @ts-ignore
         assert.strictEqual(typeof agent.proxy["lookup"], "undefined");

@@ -1,19 +1,19 @@
 {
     "name": "better-lookup",
-    "version": "1.4.1",
+    "version": "1.5.0",
     "description": "A better async DNS lookup function for Node.js that implements atomic cache operation.",
     "main": "./cjs/index.js",
     "module": "./esm/index.js",
-    "types": "./cjs/index.d.ts",
+    "types": "./esm/index.d.ts",
     "exports": {
         "require": "./cjs/index.js",
         "import": "./esm/index.js",
-        "types": "./cjs/index.d.ts"
+        "types": "./esm/index.d.ts"
     },
     "scripts": {
-        "build": "tsc --module esnext --outDir esm && tsc --module commonjs --outDir cjs --declaration && node postbuild.js",
+        "build": "tsc --module esnext --outDir esm --declaration && tsc --module commonjs --outDir cjs && node postbuild.js",
         "prepack": "npm run build",
-        "test": "mocha -r ts-node/register test.ts"
+        "test": "tsc --noEmit && tsx ./node_modules/mocha/bin/mocha test.ts --exit"
     },
     "repository": {
         "type": "git",
@@ -37,11 +37,11 @@
         "@types/node": "^22.1.0",
         "https-proxy-agent": "^5.0.1",
         "mocha": "^10.7.0",
-        "ts-node": "^10.9.2",
+        "tsx": "^4.19.2",
         "typescript": "^4.9.5"
     },
     "dependencies": {
-        "@ayonli/jsext": "^0.9.56"
+        "@ayonli/jsext": "^1.0.0"
     },
     "engines": {
         "node": ">=14"
